@@ -154,3 +154,32 @@ A nonexistent `productId` is caught at step 3 → rollback → `404`, zero rows 
 - **What the spec missed:** it didn't cover validating individual items. Added a `400` check for an empty `items` array and for items missing a `productId` or with a non-positive `quantity`, before the transaction opens.
 - **How the transaction error handling works:** `prisma.$transaction(async (tx) => {...})` runs everything on `tx` inside one DB transaction. If the callback throws (e.g. a `productId` doesn't exist), Prisma rolls the whole transaction back — the order and its items are never committed, so there's no half-created order. The thrown error bubbles up to the route, which maps "does not exist" to a `404`.
 - **One thing I'd design differently:** I look products up first and then create — two round-trips. I'd consider relying on the DB foreign-key constraint to reject a bad `productId` on insert instead, but the explicit lookup gives a cleaner error message and lets me read each product's current price for the total, so I kept it.
+
+---
+
+## Final Spec Reconciliation: Project Complete
+
+> Scope note: this is an **audit-only** pass. The frontend was reviewed but intentionally left unmodified, and no live database is connected yet, so end-to-end testing has not been run. Findings below are from static review of `/student-store-ui` against this contract.
+
+### Full-system audit result
+- **Backend matches the contract.** All 8 documented endpoints are implemented in `server.js` with the right methods, status codes, and error shapes. `POST /orders` follows the Transactional Flow exactly.
+- **CORS is enabled** — `app.use(cors())` in `server.js`, `cors` package installed. (The spec didn't originally call out CORS; noting it here as an implementation detail.)
+- **The frontend is an unwired starter template.** It makes **zero** working API calls today:
+  - `App.jsx` — `products` state is never populated (no `GET /products`, no `useEffect`).
+  - `App.jsx` — `handleOnCheckout` is an empty function (no `POST /orders`).
+  - `ProductDetail.jsx` — `product` is never fetched (no `GET /products/:id`); the page is stuck on "Loading…".
+
+### Gaps found (frontend expectations vs. API contract)
+These are **documented, not yet resolved** (UI left untouched per instruction):
+1. **`image_url` vs `imageUrl`** — `ProductDetail.jsx` reads `product.image_url` (snake_case); backend returns `imageUrl`. Resolution TBD: rename in the frontend, or alias in the API response.
+2. **Checkout response shape mismatch** — `CheckoutSuccess.jsx` reads `order.purchase.receipt.lines[]`, a shape the spec never defines. Backend returns `{ id, customer, status, totalPrice, createdAt, orderItems }`. Needs the frontend rewritten to the real shape (or a receipt builder added).
+3. **Order request body** — the cart is a `{ productId: quantity }` map (`utils/cart.js`); `POST /orders` expects `{ customer, items: [{ productId, quantity }] }`. A transform is needed at checkout time.
+4. **No clean `customer` field** — `PaymentInfo.jsx` binds `userInfo.name`/`.id`/`.email` inconsistently; nothing maps cleanly to the order's `customer` string.
+5. **Category filtering is client-side** — `Home.jsx` filters in JS and never uses the `?category=` query param. Not a bug; the param is simply unused by the UI.
+
+### Still blocking a true end-to-end test
+- **No database connected** — `.env` still has placeholder credentials; the migration (`add_order_items_with_relations`) has not run, so there are no live tables.
+- **Frontend not wired** — resolving gaps 1–4 requires editing UI components, deferred by request.
+
+### What the spec enabled during this project
+Writing the contract first meant the backend was never the unknown — every route's request/response shape was decided before a line of handler code, so implementation was mechanical and the `POST /orders` transaction matched the plan on the first pass. It also made this audit possible: the frontend's mismatches are obvious precisely *because* there's a written source of truth to compare them against.
