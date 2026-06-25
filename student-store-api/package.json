@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./src/server.js",
-    "seed":   "npx prisma db seed",
+    "seed": "npx prisma db seed",
     "dev": "node ./src/server.js"
   },
   "keywords": [],
@@ -19,7 +19,8 @@
     "pg": "^8.11.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "prisma": "^6.19.3"
   },
   "prisma": {
     "seed": "node seed.js"
