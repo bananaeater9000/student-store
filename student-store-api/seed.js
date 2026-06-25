@@ -14,17 +14,19 @@ async function seed() {
 
     // Load JSON data
     const productsData = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '../data/products.json'), 'utf8')
+      fs.readFileSync(path.join(__dirname, 'data/products.json'), 'utf8')
     )
 
     const ordersData = JSON.parse(
-      fs.readFileSync(path.join(__dirname, '../data/orders.json'), 'utf8')
+      fs.readFileSync(path.join(__dirname, 'data/orders.json'), 'utf8')
     )
 
-    // Seed products
+    // Seed products — keep the explicit ids from the JSON so orders.json's
+    // product_id references line up with the seeded products.
     for (const product of productsData.products) {
       await prisma.product.create({
         data: {
+          id: product.id,
           name: product.name,
           description: product.description,
           price: product.price,
@@ -34,11 +36,16 @@ async function seed() {
       })
     }
 
+    // Reset the autoincrement sequence so future inserts don't collide with the explicit ids.
+    await prisma.$executeRawUnsafe(
+      `SELECT setval(pg_get_serial_sequence('"Product"', 'id'), (SELECT MAX(id) FROM "Product"))`
+    )
+
     // Seed orders and items
     for (const order of ordersData.orders) {
       const createdOrder = await prisma.order.create({
         data: {
-          customer: order.customer_id,
+          customer: String(order.customer_id),
           totalPrice: order.total_price,
           status: order.status,
           createdAt: new Date(order.created_at),

@@ -23,6 +23,23 @@ function App() {
   const [error, setError] = useState(null);
   const [order, setOrder] = useState(null);
 
+  // Fetch all products from the backend on first render.
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsFetching(true);
+      setError(null);
+      try {
+        const { data } = await axios.get("http://localhost:3000/products");
+        setProducts(data);
+      } catch (err) {
+        setError("Failed to load products");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   // Toggles sidebar
   const toggleSidebar = () => setSidebarOpen((isOpen) => !isOpen);
 
@@ -37,7 +54,25 @@ function App() {
   };
 
   const handleOnCheckout = async () => {
-  }
+    setIsCheckingOut(true);
+    setError(null);
+    try {
+      // Transform the cart ({ productId: quantity }) into the items array the API expects.
+      const items = Object.keys(cart).map((id) => ({
+        productId: Number(id),
+        quantity: cart[id],
+      }));
+      const { data } = await axios.post("http://localhost:3000/orders", {
+        customer: userInfo.name,
+        items,
+      });
+      setOrder(data);
+    } catch (err) {
+      setError("Failed to place order");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
 
   return (
