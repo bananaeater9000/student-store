@@ -147,3 +147,10 @@ A nonexistent `productId` is caught at step 3 → rollback → `404`, zero rows 
 - **Smooth translation:** `imageUrl` → `String?`; the `?` matched the optional spec field directly, everything else stayed required.
 - **Off-spec choice:** left the `orderItems` back-relation commented out until the OrderItem model exists, keeping this migration to a clean `products` table.
 - **Spec fill-in:** added `PUT` and `DELETE /products/:id` (the spec implied five endpoints but only detailed three) following REST conventions.
+
+## Decisions Log — Order Creation Transaction
+
+- **What the spec got right:** the operation order held up exactly — validate input, look up all products in one query, compute the total from server-side prices, then create the order with its items in a single nested write. I never had to reorder anything.
+- **What the spec missed:** it didn't cover validating individual items. Added a `400` check for an empty `items` array and for items missing a `productId` or with a non-positive `quantity`, before the transaction opens.
+- **How the transaction error handling works:** `prisma.$transaction(async (tx) => {...})` runs everything on `tx` inside one DB transaction. If the callback throws (e.g. a `productId` doesn't exist), Prisma rolls the whole transaction back — the order and its items are never committed, so there's no half-created order. The thrown error bubbles up to the route, which maps "does not exist" to a `404`.
+- **One thing I'd design differently:** I look products up first and then create — two round-trips. I'd consider relying on the DB foreign-key constraint to reject a bad `productId` on insert instead, but the explicit lookup gives a cleaner error message and lets me read each product's current price for the total, so I kept it.
