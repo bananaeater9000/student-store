@@ -14,11 +14,33 @@ datasource db {
 }
 
 model Product {
-  id          Int     @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   description String
   price       Float
   imageUrl    String?
   category    String
-  // orderItems OrderItem[]  — back-relation added with the OrderItem model in a later milestone
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  customer   String
+  totalPrice Float       @default(0)
+  status     String      @default("pending")
+  createdAt  DateTime    @default(now())
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id        Int   @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int   @default(1)
+  price     Float // unit price snapshot at order time
+
+  // Deleting the parent Order removes its OrderItems (cascade).
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Deleting the referenced Product removes the OrderItem (cascade).
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }

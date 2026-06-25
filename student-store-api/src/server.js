@@ -4,6 +4,7 @@ const express = require('express')
 const cors = require('cors')
 
 const Product = require('../models/product')
+const Order = require('../models/order')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -107,6 +108,63 @@ app.delete('/products/:id', async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to delete product' })
+  }
+})
+
+// ---------- Order routes (see planning.md → Section 2 & 3) ----------
+
+// GET /orders → 200 with all orders, each including its items
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await Order.findAll()
+    res.status(200).json(orders)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch orders' })
+  }
+})
+
+// GET /orders/:id → 200 with the order + its items, or 404
+app.get('/orders/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'Order id must be an integer' })
+  }
+  try {
+    const order = await Order.findById(id)
+    if (!order) return res.status(404).json({ error: 'Order not found' })
+    res.status(200).json(order)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch order' })
+  }
+})
+
+// POST /orders → 201 with the created order + items (atomic). 400/404 on bad input.
+app.post('/orders', async (req, res) => {
+  const { customer, status, items } = req.body
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Order must contain at least one item' })
+  }
+  for (const item of items) {
+    if (!Number.isInteger(item.productId) || !(item.quantity > 0)) {
+      return res
+        .status(400)
+        .json({ error: 'Each item needs a productId and a positive quantity' })
+    }
+  }
+
+  try {
+    const order = await Order.create({ customer, status, items })
+    res.status(201).json(order)
+  } catch (err) {
+    // A nonexistent productId throws from inside the transaction → 404, nothing saved.
+    if (/does not exist/.test(err.message)) {
+      return res.status(404).json({ error: err.message })
+    }
+    console.error(err)
+    res.status(500).json({ error: 'Failed to create order' })
   }
 })
 
