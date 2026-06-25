@@ -89,8 +89,22 @@ So OrderItem is downstream of **two** cascade rules at once.
 | POST   | `/orders`       | Create order + its items |
 
 ### GET /products
-- **Request:** none.
+- **Request:** none required.
+- **Query Parameters** (all optional, combinable):
+  | Param      | Values                          | Effect                                                        |
+  |------------|---------------------------------|---------------------------------------------------------------|
+  | `category` | any string, e.g. `Apparel`      | Filters to products whose `category` matches (case-insensitive) |
+  | `sort`     | `price` \| `name`               | Sorts results ascending by that field                         |
+  - **Default behavior (no params):** return **all** products, unordered (insertion/`id` order).
+  - **Combining:** `category` and `sort` can be used together, e.g. `?category=Apparel&sort=price`.
+  - **Invalid `category`:** a category with no matching products is not an error → returns `200` with an empty array `[]`.
+  - **Invalid `sort`:** an unrecognized `sort` value (anything other than `price`/`name`) → `400 { "error": "Invalid sort field: <value>. Allowed: price, name" }`.
 - **Success — 200:** `[ { id, name, description, price, imageUrl, category }, ... ]`
+- **Examples:**
+  - `GET /products` → all products, unordered
+  - `GET /products?category=Apparel` → only Apparel products
+  - `GET /products?sort=price` → all products, cheapest first
+  - `GET /products?category=Supplies&sort=name` → Supplies, alphabetical by name
 
 ### GET /products/:id
 - **Request:** route param `id` (int).

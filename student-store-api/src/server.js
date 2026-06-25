@@ -19,10 +19,20 @@ app.get('/', (req, res) => {
 
 // ---------- Product routes (see planning.md → Section 2: API Contract) ----------
 
-// GET /products → 200 with array of all products
+// GET /products → 200 with array of products.
+// Optional query params: ?category=<string> (filter), ?sort=price|name (sort asc).
+const ALLOWED_SORT_FIELDS = ['price', 'name']
 app.get('/products', async (req, res) => {
+  const { category, sort } = req.query
+
+  if (sort !== undefined && !ALLOWED_SORT_FIELDS.includes(sort)) {
+    return res.status(400).json({
+      error: `Invalid sort field: ${sort}. Allowed: ${ALLOWED_SORT_FIELDS.join(', ')}`,
+    })
+  }
+
   try {
-    const products = await Product.findAll()
+    const products = await Product.findAll({ category, sort })
     res.status(200).json(products)
   } catch (err) {
     console.error(err)

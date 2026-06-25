@@ -5,9 +5,21 @@ const prisma = require('../src/db/db')
  * Each method maps to one CRUD operation from the API contract in planning.md.
  */
 class Product {
-  // GET /products → list all products
-  static async findAll() {
-    return prisma.product.findMany({ orderBy: { id: 'asc' } })
+  // GET /products → list products, optionally filtered by category and/or sorted.
+  // Accepts { category, sort } (both optional). See planning.md → GET /products.
+  static async findAll({ category, sort } = {}) {
+    const query = {}
+
+    if (category) {
+      // Case-insensitive exact match on category
+      query.where = { category: { equals: category, mode: 'insensitive' } }
+    }
+
+    if (sort) {
+      query.orderBy = { [sort]: 'asc' }
+    }
+
+    return prisma.product.findMany(query)
   }
 
   // GET /products/:id → one product, or null if not found
