@@ -12,3 +12,13 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  category    String
+  // orderItems OrderItem[]  — back-relation added with the OrderItem model in a later milestone
+}

@@ -184,3 +184,13 @@ POST /orders must be **atomic**: create the Order, create all its OrderItems, co
 7. **Respond `201`** with the created order + nested `orderItems`.
 
 **What if an item references a nonexistent product?** Caught at step 3 → throw inside the transaction → rollback → `404`, and zero rows are written (no orphaned Order, no partial items).
+
+---
+
+## Decisions Log — Product Model
+
+- **Schema translation that went smoothly**: `imageUrl` translated directly to `String?` — the `?` optional modifier matched the "Required: no" column in the spec one-to-one, while every other field stayed non-null. `prisma validate` passed on the first try.
+
+- **Field decision I made during implementation that wasn't in the original spec**: Kept the `orderItems` back-relation **commented out** in `schema.prisma` for this milestone. It's a virtual field (not a real column), so it can't exist until the `OrderItem` model does — deferring it keeps the migration to a clean single `products` table without changing what a Product contains.
+
+- **Route behavior that needed a spec update**: The contract only fully detailed `GET /products`, `GET /products/:id`, and `POST /products`, but the milestone requires five endpoints. Added `PUT /products/:id` (200 with the updated product, 404 if missing) and `DELETE /products/:id` (204 No Content, 404 if missing) following REST convention — no contradiction with the spec, just filling in the two it left implicit.
