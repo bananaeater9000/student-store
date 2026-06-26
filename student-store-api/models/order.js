@@ -63,6 +63,20 @@ class Order {
       })
     })
   }
+
+  // PUT /orders/:id → update an order (e.g. change status), returns it with items.
+  static async update(id, data) {
+    return prisma.order.update({
+      where: { id },
+      data,
+      include: { orderItems: true },
+    })
+  }
+
+  // DELETE /orders/:id → remove an order (cascade removes its order items).
+  static async delete(id) {
+    return prisma.order.delete({ where: { id } })
+  }
 }
 
 module.exports = Order

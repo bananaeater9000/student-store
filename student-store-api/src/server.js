@@ -168,6 +168,43 @@ app.post('/orders', async (req, res) => {
   }
 })
 
+// PUT /orders/:id → 200 with the updated order (+ items), or 404 if not found
+app.put('/orders/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'Order id must be an integer' })
+  }
+  try {
+    const existing = await Order.findById(id)
+    if (!existing) return res.status(404).json({ error: 'Order not found' })
+
+    const { customer, status, totalPrice } = req.body
+    const updated = await Order.update(id, { customer, status, totalPrice })
+    res.status(200).json(updated)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to update order' })
+  }
+})
+
+// DELETE /orders/:id → 204 no content, or 404 if not found
+app.delete('/orders/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'Order id must be an integer' })
+  }
+  try {
+    const existing = await Order.findById(id)
+    if (!existing) return res.status(404).json({ error: 'Order not found' })
+
+    await Order.delete(id)
+    res.status(204).send()
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to delete order' })
+  }
+})
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`✅ Server listening on http://localhost:${PORT}`)
