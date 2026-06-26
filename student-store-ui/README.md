@@ -101,7 +101,7 @@ Deployed Application (optional): [Student Store Deployed Site](ADD_LINK_HERE)
 
 
 
-`ADD_EMBEDDED_CODE_HERE`
+[Watch the walkthrough video on Loom](https://www.loom.com/share/f5bb4e7a3ab24ec99937e5ee9f69d17e)
 
 ### Reflection
 
