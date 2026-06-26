@@ -23,6 +23,7 @@ Deployed Application (optional): [Student Store Deployed Site](ADD_LINK_HERE)
   - [x] Implement methods for CRUD operations on products.
   - [x] Ensure transaction handling such that when an product is deleted, any `order_items` that reference that product are also deleted. 
   - [ ] **VIDEO WALKTHROUGH SPECIAL INSTRUCTIONS**: Use Prisma Studio to demonstrate the creation of all attributes (table columns) in your Products Model.
+  
 - [x] **Orders Model**
   - [x] Develop a model to manage orders. 
   - [x] This model should at minimum include the attributes:
